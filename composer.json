@@ -1,0 +1,76 @@
+{
+  "name": "licensemanager/laravel-sdk",
+  "description": "Official Laravel SDK for License Management Platform - Elegant license validation, activation, and management for Laravel applications",
+  "type": "library",
+  "keywords": [
+    "laravel",
+    "license",
+    "license-management",
+    "licensing",
+    "software-licensing",
+    "activation",
+    "validation",
+    "drm",
+    "laravel-package"
+  ],
+  "homepage": "https://getkeymanager.com",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "License Manager Team",
+      "email": "dev@getkeymanager.com"
+    }
+  ],
+  "support": {
+    "email": "support@getkeymanager.com",
+    "docs": "https://docs.getkeymanager.com/sdks/laravel",
+    "issues": "https://github.com/licensemanager/laravel-sdk/issues",
+    "source": "https://github.com/licensemanager/laravel-sdk"
+  },
+  "require": {
+    "php": "^8.1 || ^8.2 || ^8.3",
+    "illuminate/support": "^10.0 || ^11.0 || ^12.0",
+    "illuminate/console": "^10.0 || ^11.0 || ^12.0",
+    "illuminate/http": "^10.0 || ^11.0 || ^12.0",
+    "licensemanager/php-sdk": "^2.0"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^8.0 || ^9.0",
+    "phpunit/phpunit": "^10.0",
+    "phpstan/phpstan": "^1.10",
+    "laravel/pint": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "LicenseManager\\Laravel\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "LicenseManager\\Laravel\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit",
+    "test:coverage": "vendor/bin/phpunit --coverage-html coverage/",
+    "lint": "vendor/bin/pint",
+    "analyse": "vendor/bin/phpstan analyse"
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "LicenseManager\\Laravel\\LicenseManagerServiceProvider"
+      ],
+      "aliases": {
+        "LicenseManager": "LicenseManager\\Laravel\\Facades\\LicenseManager"
+      }
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "optimize-autoloader": true,
+    "preferred-install": "dist"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
