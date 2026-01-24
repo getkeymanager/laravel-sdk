@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace LicenseManager\Laravel\Commands;
+namespace GetKeyManager\Laravel\Commands;
 
 use Illuminate\Console\Command;
-use LicenseManager\Laravel\Facades\LicenseManager;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
 use Exception;
 
 /**
@@ -48,7 +48,7 @@ class LicenseActivateCommand extends Command
 
         // Generate hardware ID if not provided and no domain
         if (!$hardwareId && !$domain) {
-            $hardwareId = LicenseManager::generateHardwareId();
+            $hardwareId = GetKeyManager::generateHardwareId();
             $this->info("Generated Hardware ID: {$hardwareId}");
         }
 
@@ -70,7 +70,7 @@ class LicenseActivateCommand extends Command
                 $this->line("Options: " . json_encode($options));
             }
 
-            $result = LicenseManager::activateLicense($licenseKey, $options);
+            $result = GetKeyManager::activateLicense($licenseKey, $options);
 
             if ($this->option('json')) {
                 $this->line(json_encode($result, JSON_PRETTY_PRINT));

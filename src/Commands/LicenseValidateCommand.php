@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace LicenseManager\Laravel\Commands;
+namespace GetKeyManager\Laravel\Commands;
 
 use Illuminate\Console\Command;
-use LicenseManager\Laravel\Facades\LicenseManager;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
 use Exception;
 
 /**
@@ -56,7 +56,7 @@ class LicenseValidateCommand extends Command
                 $this->line("Options: " . json_encode($options));
             }
 
-            $result = LicenseManager::validateLicense($licenseKey, $options);
+            $result = GetKeyManager::validateLicense($licenseKey, $options);
 
             if ($this->option('json')) {
                 $this->line(json_encode($result, JSON_PRETTY_PRINT));

@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace LicenseManager\Laravel\Tests;
+namespace GetKeyManager\Laravel\Tests;
 
-use LicenseManager\Laravel\Facades\LicenseManager;
-use LicenseManager\Laravel\LicenseManagerClient;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
+use GetKeyManager\Laravel\GetKeyManagerClient;
 
 /**
  * License Manager Client Tests
  */
-class LicenseManagerTest extends TestCase
+class GetKeyManagerTest extends TestCase
 {
     public function test_service_provider_registers_client()
     {
         $client = $this->app->make('getkeymanager');
         
-        $this->assertInstanceOf(LicenseManagerClient::class, $client);
+        $this->assertInstanceOf(GetKeyManagerClient::class, $client);
     }
 
     public function test_facade_resolves_correctly()
     {
-        $this->assertInstanceOf(LicenseManagerClient::class, LicenseManager::getFacadeRoot());
+        $this->assertInstanceOf(GetKeyManagerClient::class, GetKeyManager::getFacadeRoot());
     }
 
     public function test_config_is_loaded()
@@ -33,7 +33,7 @@ class LicenseManagerTest extends TestCase
 
     public function test_can_generate_hardware_id()
     {
-        $hardwareId = LicenseManager::generateHardwareId();
+        $hardwareId = GetKeyManager::generateHardwareId();
         
         $this->assertIsString($hardwareId);
         $this->assertNotEmpty($hardwareId);
@@ -41,7 +41,7 @@ class LicenseManagerTest extends TestCase
 
     public function test_can_generate_uuid()
     {
-        $uuid = LicenseManager::generateUuid();
+        $uuid = GetKeyManager::generateUuid();
         
         $this->assertIsString($uuid);
         $this->assertMatchesRegularExpression(
@@ -62,9 +62,9 @@ class LicenseManagerTest extends TestCase
     public function test_validate_license_returns_array()
     {
         // This is a mock test - in real tests, you would mock HTTP responses
-        $client = $this->app->make(LicenseManagerClient::class);
+        $client = $this->app->make(GetKeyManagerClient::class);
         
-        $this->assertInstanceOf(LicenseManagerClient::class, $client);
+        $this->assertInstanceOf(GetKeyManagerClient::class, $client);
         
         // In real tests, mock the HTTP client:
         // $mockResponse = ['success' => true, 'data' => [...]]

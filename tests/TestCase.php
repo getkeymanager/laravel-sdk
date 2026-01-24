@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace LicenseManager\Laravel\Tests;
+namespace GetKeyManager\Laravel\Tests;
 
-use LicenseManager\Laravel\LicenseManagerClient;
-use LicenseManager\Laravel\LicenseManagerServiceProvider;
+use GetKeyManager\Laravel\GetKeyManagerClient;
+use GetKeyManager\Laravel\GetKeyManagerServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 /**
@@ -29,7 +29,7 @@ class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         return [
-            LicenseManagerServiceProvider::class,
+            GetKeyManagerServiceProvider::class,
         ];
     }
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace LicenseManager\Laravel;
+namespace GetKeyManager\Laravel;
 
-use LicenseManager\SDK\LicenseClient;
+use GetKeyManager\SDK\LicenseClient;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
@@ -14,7 +14,7 @@ use Exception;
  * Provides Laravel-friendly interface with logging, caching,
  * and exception handling.
  */
-class LicenseManagerClient
+class GetKeyManagerClient
 {
     private LicenseClient $client;
     private array $config;

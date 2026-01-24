@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace LicenseManager\Laravel;
+namespace GetKeyManager\Laravel;
 
 use Illuminate\Support\ServiceProvider;
-use LicenseManager\SDK\LicenseClient;
+use GetKeyManager\SDK\LicenseClient;
 
 /**
  * License Manager Service Provider
@@ -13,7 +13,7 @@ use LicenseManager\SDK\LicenseClient;
  * Registers the License Manager SDK with Laravel's service container
  * and publishes configuration files.
  */
-class LicenseManagerServiceProvider extends ServiceProvider
+class GetKeyManagerServiceProvider extends ServiceProvider
 {
     /**
      * Register services.
@@ -32,11 +32,11 @@ class LicenseManagerServiceProvider extends ServiceProvider
         $this->app->singleton('getkeymanager', function ($app) {
             $config = $app['config']['getkeymanager'];
 
-            return new LicenseManagerClient($config);
+            return new GetKeyManagerClient($config);
         });
 
         // Register the client alias
-        $this->app->alias('getkeymanager', LicenseManagerClient::class);
+        $this->app->alias('getkeymanager', GetKeyManagerClient::class);
     }
 
     /**
@@ -73,6 +73,6 @@ class LicenseManagerServiceProvider extends ServiceProvider
      */
     public function provides(): array
     {
-        return ['getkeymanager', LicenseManagerClient::class];
+        return ['getkeymanager', GetKeyManagerClient::class];
     }
 }

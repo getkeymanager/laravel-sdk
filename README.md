@@ -56,11 +56,11 @@ LICENSE_MANAGER_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY
 ### Using the Facade
 
 ```php
-use LicenseManager\Laravel\Facades\LicenseManager;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
 
 // Validate a license
-$result = LicenseManager::validateLicense('XXXXX-XXXXX-XXXXX-XXXXX', [
-    'hardwareId' => LicenseManager::generateHardwareId()
+$result = GetKeyManager::validateLicense('XXXXX-XXXXX-XXXXX-XXXXX', [
+    'hardwareId' => GetKeyManager::generateHardwareId()
 ]);
 
 if ($result['success']) {
@@ -68,13 +68,13 @@ if ($result['success']) {
 }
 
 // Activate a license
-$result = LicenseManager::activateLicense('XXXXX-XXXXX-XXXXX-XXXXX', [
-    'hardwareId' => LicenseManager::generateHardwareId(),
+$result = GetKeyManager::activateLicense('XXXXX-XXXXX-XXXXX-XXXXX', [
+    'hardwareId' => GetKeyManager::generateHardwareId(),
     'name' => 'Production Server'
 ]);
 
 // Check a feature
-$result = LicenseManager::checkFeature('XXXXX-XXXXX-XXXXX-XXXXX', 'advanced-features');
+$result = GetKeyManager::checkFeature('XXXXX-XXXXX-XXXXX-XXXXX', 'advanced-features');
 
 if ($result['data']['enabled']) {
     echo "Feature is enabled!";
@@ -84,11 +84,11 @@ if ($result['data']['enabled']) {
 ### Using Dependency Injection
 
 ```php
-use LicenseManager\Laravel\LicenseManagerClient;
+use GetKeyManager\Laravel\GetKeyManagerClient;
 
 class LicenseController extends Controller
 {
-    public function validate(LicenseManagerClient $license)
+    public function validate(GetKeyManagerClient $license)
     {
         $result = $license->validateLicense(request('license_key'));
         
@@ -216,9 +216,9 @@ php artisan license:deactivate XXXXX-XXXXX-XXXXX-XXXXX --all
 ### Creating Licenses
 
 ```php
-use LicenseManager\Laravel\Facades\LicenseManager;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
 
-$result = LicenseManager::createLicenseKeys(
+$result = GetKeyManager::createLicenseKeys(
     'product-uuid',
     'generator-uuid',
     [
@@ -235,53 +235,53 @@ $result = LicenseManager::createLicenseKeys(
 // Read offline license file
 $offlineLicense = file_get_contents('license.lic');
 
-$result = LicenseManager::validateOfflineLicense($offlineLicense, [
-    'hardwareId' => LicenseManager::generateHardwareId()
+$result = GetKeyManager::validateOfflineLicense($offlineLicense, [
+    'hardwareId' => GetKeyManager::generateHardwareId()
 ]);
 ```
 
 ### Getting License Details
 
 ```php
-$details = LicenseManager::getLicenseDetails('XXXXX-XXXXX-XXXXX-XXXXX');
+$details = GetKeyManager::getLicenseDetails('XXXXX-XXXXX-XXXXX-XXXXX');
 
 // Get activations
-$activations = LicenseManager::getLicenseActivations('XXXXX-XXXXX-XXXXX-XXXXX');
+$activations = GetKeyManager::getLicenseActivations('XXXXX-XXXXX-XXXXX-XXXXX');
 ```
 
 ### License Lifecycle Management
 
 ```php
 // Suspend a license
-LicenseManager::suspendLicense('XXXXX-XXXXX-XXXXX-XXXXX');
+GetKeyManager::suspendLicense('XXXXX-XXXXX-XXXXX-XXXXX');
 
 // Resume a suspended license
-LicenseManager::resumeLicense('XXXXX-XXXXX-XXXXX-XXXXX');
+GetKeyManager::resumeLicense('XXXXX-XXXXX-XXXXX-XXXXX');
 
 // Revoke a license (permanent)
-LicenseManager::revokeLicense('XXXXX-XXXXX-XXXXX-XXXXX');
+GetKeyManager::revokeLicense('XXXXX-XXXXX-XXXXX-XXXXX');
 ```
 
 ### Working with Metadata
 
 ```php
 // Get license metadata
-$metadata = LicenseManager::getLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX');
+$metadata = GetKeyManager::getLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX');
 
 // Update metadata
-LicenseManager::updateLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX', [
+GetKeyManager::updateLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX', [
     'server_name' => 'Production 1',
     'deployment_date' => now()->toDateString()
 ]);
 
 // Delete specific metadata key
-LicenseManager::deleteLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX', 'server_name');
+GetKeyManager::deleteLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX', 'server_name');
 ```
 
 ### Telemetry
 
 ```php
-LicenseManager::sendTelemetry('XXXXX-XXXXX-XXXXX-XXXXX', [
+GetKeyManager::sendTelemetry('XXXXX-XXXXX-XXXXX-XXXXX', [
     'event' => 'feature_used',
     'feature_name' => 'export_pdf',
     'usage_count' => 1,
@@ -293,10 +293,10 @@ LicenseManager::sendTelemetry('XXXXX-XXXXX-XXXXX-XXXXX', [
 
 ```php
 // Get product downloadables
-$downloads = LicenseManager::getDownloadables('product-uuid');
+$downloads = GetKeyManager::getDownloadables('product-uuid');
 
 // Get download URL (authenticated)
-$url = LicenseManager::getDownloadUrl('downloadable-uuid', 'XXXXX-XXXXX-XXXXX-XXXXX');
+$url = GetKeyManager::getDownloadUrl('downloadable-uuid', 'XXXXX-XXXXX-XXXXX-XXXXX');
 
 // Redirect user to download
 return redirect($url['data']['download_url']);
@@ -335,11 +335,11 @@ return [
 ## Error Handling
 
 ```php
-use LicenseManager\Laravel\Facades\LicenseManager;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
 use Exception;
 
 try {
-    $result = LicenseManager::validateLicense($licenseKey);
+    $result = GetKeyManager::validateLicense($licenseKey);
     
     if (!$result['success']) {
         // Handle validation failure
@@ -361,13 +361,13 @@ try {
 ## Testing
 
 ```php
-use LicenseManager\Laravel\Facades\LicenseManager;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
 
 class FeatureTest extends TestCase
 {
     public function test_license_validation()
     {
-        $result = LicenseManager::validateLicense('test-license-key');
+        $result = GetKeyManager::validateLicense('test-license-key');
         
         $this->assertTrue($result['success']);
         $this->assertEquals('active', $result['data']['status']);
@@ -378,11 +378,11 @@ class FeatureTest extends TestCase
 ### Mocking in Tests
 
 ```php
-use LicenseManager\Laravel\Facades\LicenseManager;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
 
 public function test_protected_route()
 {
-    LicenseManager::shouldReceive('validateLicense')
+    GetKeyManager::shouldReceive('validateLicense')
         ->once()
         ->andReturn([
             'success' => true,

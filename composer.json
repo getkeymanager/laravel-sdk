@@ -42,12 +42,12 @@
   },
   "autoload": {
     "psr-4": {
-      "LicenseManager\\Laravel\\": "src/"
+      "GetKeyManager\\Laravel\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "LicenseManager\\Laravel\\Tests\\": "tests/"
+      "GetKeyManager\\Laravel\\Tests\\": "tests/"
     }
   },
   "scripts": {
@@ -59,10 +59,10 @@
   "extra": {
     "laravel": {
       "providers": [
-        "LicenseManager\\Laravel\\LicenseManagerServiceProvider"
+        "GetKeyManager\\Laravel\\GetKeyManagerServiceProvider"
       ],
       "aliases": {
-        "LicenseManager": "LicenseManager\\Laravel\\Facades\\LicenseManager"
+        "GetKeyManager": "GetKeyManager\\Laravel\\Facades\\GetKeyManager"
       }
     }
   },

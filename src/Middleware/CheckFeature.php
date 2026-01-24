@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace LicenseManager\Laravel\Middleware;
+namespace GetKeyManager\Laravel\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use LicenseManager\Laravel\Facades\LicenseManager;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
 use Exception;
 
 /**
@@ -36,7 +36,7 @@ class CheckFeature
 
         try {
             // Check feature
-            $result = LicenseManager::checkFeature($licenseKey, $featureName);
+            $result = GetKeyManager::checkFeature($licenseKey, $featureName);
 
             // Check if feature is enabled
             if (!($result['success'] ?? false) || !($result['data']['enabled'] ?? false)) {

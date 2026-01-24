@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace LicenseManager\Laravel\Middleware;
+namespace GetKeyManager\Laravel\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use LicenseManager\Laravel\Facades\LicenseManager;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
 use Exception;
 
 /**
@@ -50,7 +50,7 @@ class ValidateLicense
                 $options['productId'] = $productId;
             }
 
-            $result = LicenseManager::validateLicense($licenseKey, $options);
+            $result = GetKeyManager::validateLicense($licenseKey, $options);
 
             // Check if validation was successful
             if (!($result['success'] ?? false)) {

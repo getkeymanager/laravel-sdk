@@ -8,7 +8,7 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
-use LicenseManager\Laravel\Facades\LicenseManager;
+use GetKeyManager\Laravel\Facades\GetKeyManager;
 use Illuminate\Support\Facades\Route;
 
 // ============================================================================
@@ -16,8 +16,8 @@ use Illuminate\Support\Facades\Route;
 // ============================================================================
 
 // Validate a license
-$result = LicenseManager::validateLicense('XXXXX-XXXXX-XXXXX-XXXXX', [
-    'hardwareId' => LicenseManager::generateHardwareId()
+$result = GetKeyManager::validateLicense('XXXXX-XXXXX-XXXXX-XXXXX', [
+    'hardwareId' => GetKeyManager::generateHardwareId()
 ]);
 
 if ($result['success']) {
@@ -32,9 +32,9 @@ if ($result['success']) {
 // ============================================================================
 
 $licenseKey = 'XXXXX-XXXXX-XXXXX-XXXXX';
-$hardwareId = LicenseManager::generateHardwareId();
+$hardwareId = GetKeyManager::generateHardwareId();
 
-$result = LicenseManager::activateLicense($licenseKey, [
+$result = GetKeyManager::activateLicense($licenseKey, [
     'hardwareId' => $hardwareId,
     'name' => 'Production Server',
     'metadata' => [
@@ -54,7 +54,7 @@ if ($result['success']) {
 // EXAMPLE 3: Feature Checking
 // ============================================================================
 
-$result = LicenseManager::checkFeature('XXXXX-XXXXX-XXXXX-XXXXX', 'advanced-reporting');
+$result = GetKeyManager::checkFeature('XXXXX-XXXXX-XXXXX-XXXXX', 'advanced-reporting');
 
 if ($result['data']['enabled']) {
     echo "✓ Advanced reporting is enabled\n";
@@ -94,13 +94,13 @@ Route::middleware(['license.validate', 'license.feature:api-access'])
 // ============================================================================
 
 use Illuminate\Http\Request;
-use LicenseManager\Laravel\LicenseManagerClient;
+use GetKeyManager\Laravel\GetKeyManagerClient;
 
 class LicenseController extends Controller
 {
-    private LicenseManagerClient $license;
+    private GetKeyManagerClient $license;
 
-    public function __construct(LicenseManagerClient $license)
+    public function __construct(GetKeyManagerClient $license)
     {
         $this->license = $license;
     }
@@ -196,8 +196,8 @@ class DashboardController extends Controller
 // Read offline license file
 $offlineLicense = Storage::get('licenses/offline.lic');
 
-$result = LicenseManager::validateOfflineLicense($offlineLicense, [
-    'hardwareId' => LicenseManager::generateHardwareId()
+$result = GetKeyManager::validateOfflineLicense($offlineLicense, [
+    'hardwareId' => GetKeyManager::generateHardwareId()
 ]);
 
 if ($result['success']) {
@@ -210,7 +210,7 @@ if ($result['success']) {
 // ============================================================================
 
 // Create bulk licenses
-$result = LicenseManager::createLicenseKeys(
+$result = GetKeyManager::createLicenseKeys(
     'product-uuid-here',
     'generator-uuid-here',
     [
@@ -223,37 +223,37 @@ $result = LicenseManager::createLicenseKeys(
 echo "Created " . count($result['data']['licenses']) . " licenses\n";
 
 // Update license
-LicenseManager::updateLicenseKey('XXXXX-XXXXX-XXXXX-XXXXX', [
+GetKeyManager::updateLicenseKey('XXXXX-XXXXX-XXXXX-XXXXX', [
     'activation_limit' => 10,
     'notes' => 'Upgraded to premium plan'
 ]);
 
 // Suspend/Resume
-LicenseManager::suspendLicense('XXXXX-XXXXX-XXXXX-XXXXX');
-LicenseManager::resumeLicense('XXXXX-XXXXX-XXXXX-XXXXX');
+GetKeyManager::suspendLicense('XXXXX-XXXXX-XXXXX-XXXXX');
+GetKeyManager::resumeLicense('XXXXX-XXXXX-XXXXX-XXXXX');
 
 // ============================================================================
 // EXAMPLE 9: Metadata Management
 // ============================================================================
 
 // Store custom metadata with license
-LicenseManager::updateLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX', [
+GetKeyManager::updateLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX', [
     'server_name' => 'prod-server-01',
     'deployment_date' => now()->toDateString(),
     'admin_contact' => 'admin@example.com'
 ]);
 
 // Retrieve metadata
-$metadata = LicenseManager::getLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX');
+$metadata = GetKeyManager::getLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX');
 
 // Delete specific metadata key
-LicenseManager::deleteLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX', 'deployment_date');
+GetKeyManager::deleteLicenseMetadata('XXXXX-XXXXX-XXXXX-XXXXX', 'deployment_date');
 
 // ============================================================================
 // EXAMPLE 10: Telemetry
 // ============================================================================
 
-LicenseManager::sendTelemetry('XXXXX-XXXXX-XXXXX-XXXXX', [
+GetKeyManager::sendTelemetry('XXXXX-XXXXX-XXXXX-XXXXX', [
     'event' => 'feature_usage',
     'feature' => 'pdf_export',
     'count' => 1,
@@ -267,7 +267,7 @@ LicenseManager::sendTelemetry('XXXXX-XXXXX-XXXXX-XXXXX', [
 // ============================================================================
 
 // Get product downloads
-$downloads = LicenseManager::getDownloadables('product-uuid-here', [
+$downloads = GetKeyManager::getDownloadables('product-uuid-here', [
     'version' => '2.0.0',
     'platform' => 'windows'
 ]);
@@ -277,7 +277,7 @@ foreach ($downloads['data']['downloadables'] as $download) {
 }
 
 // Get authenticated download URL
-$result = LicenseManager::getDownloadUrl(
+$result = GetKeyManager::getDownloadUrl(
     'downloadable-uuid-here',
     'XXXXX-XXXXX-XXXXX-XXXXX'
 );
@@ -292,7 +292,7 @@ return redirect($result['data']['download_url']);
 use Illuminate\Support\Facades\Log;
 
 try {
-    $result = LicenseManager::validateLicense($licenseKey);
+    $result = GetKeyManager::validateLicense($licenseKey);
     
     if (!$result['success']) {
         // Handle specific error codes
@@ -344,7 +344,7 @@ class ValidateLicenseJob implements ShouldQueue
         $this->licenseKey = $licenseKey;
     }
 
-    public function handle(LicenseManagerClient $license)
+    public function handle(GetKeyManagerClient $license)
     {
         $result = $license->validateLicense($this->licenseKey);
         

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LicenseManager\Laravel\Facades;
+namespace GetKeyManager\Laravel\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
@@ -44,11 +44,11 @@ use Illuminate\Support\Facades\Facade;
  * @method static array getChangelogEntry(string $entryUuid)
  * @method static string generateHardwareId()
  * @method static string generateUuid()
- * @method static \LicenseManager\SDK\LicenseClient getClient()
+ * @method static \GetKeyManager\SDK\LicenseClient getClient()
  *
- * @see \LicenseManager\Laravel\LicenseManagerClient
+ * @see \GetKeyManager\Laravel\GetKeyManagerClient
  */
-class LicenseManager extends Facade
+class GetKeyManager extends Facade
 {
     /**
      * Get the registered name of the component.
