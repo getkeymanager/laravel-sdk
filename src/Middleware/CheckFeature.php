@@ -92,7 +92,7 @@ class CheckFeature
         }
 
         // Redirect with error message
-        $redirectTo = config('licensemanager.middleware.redirect_to', '/license-required');
+        $redirectTo = config('getkeymanager.middleware.redirect_to', '/license-required');
 
         return redirect($redirectTo)->with('error', $message);
     }

@@ -24,19 +24,19 @@ class LicenseManagerServiceProvider extends ServiceProvider
     {
         // Merge package config with app config
         $this->mergeConfigFrom(
-            __DIR__.'/../config/licensemanager.php',
-            'licensemanager'
+            __DIR__.'/../config/getkeymanager.php',
+            'getkeymanager'
         );
 
         // Register the SDK client as a singleton
-        $this->app->singleton('licensemanager', function ($app) {
-            $config = $app['config']['licensemanager'];
+        $this->app->singleton('getkeymanager', function ($app) {
+            $config = $app['config']['getkeymanager'];
 
             return new LicenseManagerClient($config);
         });
 
         // Register the client alias
-        $this->app->alias('licensemanager', LicenseManagerClient::class);
+        $this->app->alias('getkeymanager', LicenseManagerClient::class);
     }
 
     /**
@@ -49,8 +49,8 @@ class LicenseManagerServiceProvider extends ServiceProvider
         // Publish configuration file
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__.'/../config/licensemanager.php' => config_path('licensemanager.php'),
-            ], 'licensemanager-config');
+                __DIR__.'/../config/getkeymanager.php' => config_path('getkeymanager.php'),
+            ], 'getkeymanager-config');
 
             // Register commands
             $this->commands([
@@ -73,6 +73,6 @@ class LicenseManagerServiceProvider extends ServiceProvider
      */
     public function provides(): array
     {
-        return ['licensemanager', LicenseManagerClient::class];
+        return ['getkeymanager', LicenseManagerClient::class];
     }
 }

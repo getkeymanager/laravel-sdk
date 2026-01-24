@@ -96,7 +96,7 @@ class ValidateLicense
      */
     protected function isSessionCachingEnabled(): bool
     {
-        return config('licensemanager.middleware.cache_in_session', true);
+        return config('getkeymanager.middleware.cache_in_session', true);
     }
 
     /**
@@ -106,7 +106,7 @@ class ValidateLicense
      */
     protected function getSessionKey(): string
     {
-        return config('licensemanager.middleware.session_key', 'license_validation');
+        return config('getkeymanager.middleware.session_key', 'license_validation');
     }
 
     /**
@@ -130,7 +130,7 @@ class ValidateLicense
         }
 
         $cachedAt = $sessionData['cached_at'] ?? 0;
-        $cacheTtl = config('licensemanager.cache_ttl', 300);
+        $cacheTtl = config('getkeymanager.cache_ttl', 300);
 
         return (time() - $cachedAt) < $cacheTtl;
     }
@@ -175,7 +175,7 @@ class ValidateLicense
         }
 
         // Redirect with error message
-        $redirectTo = config('licensemanager.middleware.redirect_to', '/license-required');
+        $redirectTo = config('getkeymanager.middleware.redirect_to', '/license-required');
 
         return redirect($redirectTo)->with('error', $message);
     }

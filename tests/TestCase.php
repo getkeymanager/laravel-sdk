@@ -42,9 +42,9 @@ class TestCase extends Orchestra
     protected function getEnvironmentSetUp($app): void
     {
         // Set up test configuration
-        $app['config']->set('licensemanager.api_key', 'test-api-key');
-        $app['config']->set('licensemanager.base_url', 'https://api.test.com');
-        $app['config']->set('licensemanager.environment', 'testing');
-        $app['config']->set('licensemanager.verify_signatures', false);
+        $app['config']->set('getkeymanager.api_key', 'test-api-key');
+        $app['config']->set('getkeymanager.base_url', 'https://api.test.com');
+        $app['config']->set('getkeymanager.environment', 'testing');
+        $app['config']->set('getkeymanager.verify_signatures', false);
     }
 }

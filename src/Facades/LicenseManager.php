@@ -57,6 +57,6 @@ class LicenseManager extends Facade
      */
     protected static function getFacadeAccessor(): string
     {
-        return 'licensemanager';
+        return 'getkeymanager';
     }
 }

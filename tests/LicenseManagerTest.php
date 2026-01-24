@@ -14,7 +14,7 @@ class LicenseManagerTest extends TestCase
 {
     public function test_service_provider_registers_client()
     {
-        $client = $this->app->make('licensemanager');
+        $client = $this->app->make('getkeymanager');
         
         $this->assertInstanceOf(LicenseManagerClient::class, $client);
     }
@@ -26,9 +26,9 @@ class LicenseManagerTest extends TestCase
 
     public function test_config_is_loaded()
     {
-        $this->assertEquals('test-api-key', config('licensemanager.api_key'));
-        $this->assertEquals('https://api.test.com', config('licensemanager.base_url'));
-        $this->assertEquals('testing', config('licensemanager.environment'));
+        $this->assertEquals('test-api-key', config('getkeymanager.api_key'));
+        $this->assertEquals('https://api.test.com', config('getkeymanager.base_url'));
+        $this->assertEquals('testing', config('getkeymanager.environment'));
     }
 
     public function test_can_generate_hardware_id()

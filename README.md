@@ -1,8 +1,8 @@
 # License Manager Laravel SDK
 
-[![Latest Version](https://img.shields.io/packagist/v/licensemanager/laravel-sdk.svg)](https://packagist.org/packages/licensemanager/laravel-sdk)
-[![License](https://img.shields.io/packagist/l/licensemanager/laravel-sdk.svg)](https://packagist.org/packages/licensemanager/laravel-sdk)
-[![Total Downloads](https://img.shields.io/packagist/dt/licensemanager/laravel-sdk.svg)](https://packagist.org/packages/licensemanager/laravel-sdk)
+[![Latest Version](https://img.shields.io/packagist/v/getkeymanager/laravel-sdk.svg)](https://packagist.org/packages/getkeymanager/laravel-sdk)
+[![License](https://img.shields.io/packagist/l/getkeymanager/laravel-sdk.svg)](https://packagist.org/packages/getkeymanager/laravel-sdk)
+[![Total Downloads](https://img.shields.io/packagist/dt/getkeymanager/laravel-sdk.svg)](https://packagist.org/packages/getkeymanager/laravel-sdk)
 
 Official Laravel SDK for [License Management Platform](https://getkeymanager.com). Elegant license validation, activation, and management for Laravel applications with built-in middleware, Artisan commands, and facade support.
 
@@ -28,16 +28,16 @@ Official Laravel SDK for [License Management Platform](https://getkeymanager.com
 Install via Composer:
 
 ```bash
-composer require licensemanager/laravel-sdk
+composer require getkeymanager/laravel-sdk
 ```
 
 ### Publish Configuration (Optional)
 
 ```bash
-php artisan vendor:publish --tag=licensemanager-config
+php artisan vendor:publish --tag=getkeymanager-config
 ```
 
-This creates `config/licensemanager.php`.
+This creates `config/getkeymanager.php`.
 
 ### Environment Configuration
 
@@ -148,7 +148,7 @@ class DashboardController extends Controller
 
 ### Custom Redirect on Validation Failure
 
-Configure in `config/licensemanager.php`:
+Configure in `config/getkeymanager.php`:
 
 ```php
 'middleware' => [
@@ -304,7 +304,7 @@ return redirect($url['data']['download_url']);
 
 ## Configuration Reference
 
-Full configuration in `config/licensemanager.php`:
+Full configuration in `config/getkeymanager.php`:
 
 ```php
 return [
@@ -429,7 +429,7 @@ See the [examples directory](./examples) for complete working examples.
 
 - 📧 Email: support@getkeymanager.com
 - 📚 Documentation: https://docs.getkeymanager.com
-- 🐛 Issues: https://github.com/licensemanager/laravel-sdk/issues
+- 🐛 Issues: https://github.com/getkeymanager/laravel-sdk/issues
 
 ## License
 
@@ -437,6 +437,6 @@ This SDK is open-sourced software licensed under the [MIT license](LICENSE).
 
 ## Related
 
-- [Base PHP SDK](https://github.com/licensemanager/php-sdk)
-- [CodeIgniter SDK](https://github.com/licensemanager/codeigniter-sdk)
+- [Base PHP SDK](https://github.com/getkeymanager/php-sdk)
+- [CodeIgniter SDK](https://github.com/getkeymanager/codeigniter-sdk)
 - [License Management Platform](https://getkeymanager.com)
