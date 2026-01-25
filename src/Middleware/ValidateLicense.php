@@ -7,17 +7,28 @@ namespace GetKeyManager\Laravel\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use GetKeyManager\Laravel\Facades\GetKeyManager;
+use GetKeyManager\Laravel\Core\LicenseException;
+use GetKeyManager\Laravel\Core\ApiResponseCode;
 use Exception;
 
 /**
- * Validate License Middleware
+ * Validate License Middleware (Hardened)
  * 
- * Protects routes by validating a license key from the request.
+ * Protects routes by validating a license key using the hardened LicenseState API.
+ * 
+ * Features:
+ * - Uses LicenseState for robust validation
+ * - Supports grace period for network failures
+ * - Multiple enforcement layers
+ * - API response code integration
+ * 
  * The license key can be provided via:
  * - Query parameter: ?license_key=XXXXX
  * - Request body: license_key field
  * - Session: stored from previous validation
  * - Header: X-License-Key
+ * 
+ * Version 2.0 - Hardened with LicenseState integration
  */
 class ValidateLicense
 {
@@ -27,15 +38,16 @@ class ValidateLicense
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure  $next
      * @param  string|null  $productId  Optional product ID to validate against
+     * @param  bool  $allowGrace  Allow grace period (default: true)
      * @return mixed
      */
-    public function handle(Request $request, Closure $next, ?string $productId = null)
+    public function handle(Request $request, Closure $next, ?string $productId = null, bool $allowGrace = true)
     {
         // Get license key from various sources
         $licenseKey = $this->getLicenseKey($request);
 
         if (!$licenseKey) {
-            return $this->handleInvalidLicense($request, 'License key is required');
+            return $this->handleInvalidLicense($request, 'License key is required', null);
         }
 
         // Check session cache first
@@ -44,33 +56,57 @@ class ValidateLicense
         }
 
         try {
-            // Validate license
+            // Resolve license state (hardened validation)
             $options = [];
             if ($productId) {
                 $options['productId'] = $productId;
             }
 
-            $result = GetKeyManager::validateLicense($licenseKey, $options);
+            $licenseState = GetKeyManager::resolveLicenseState($licenseKey, $options);
 
-            // Check if validation was successful
-            if (!($result['success'] ?? false)) {
+            // Check if license is valid (active or grace)
+            if (!$licenseState->isValid()) {
                 return $this->handleInvalidLicense(
                     $request,
-                    $result['message'] ?? 'License validation failed'
+                    'License is not valid: ' . $licenseState->getState(),
+                    $licenseState
+                );
+            }
+
+            // Optional: Reject grace period if strict validation required
+            if (!$allowGrace && $licenseState->isInGracePeriod()) {
+                return $this->handleInvalidLicense(
+                    $request,
+                    'License is in grace period. Please renew your license.',
+                    $licenseState
+                );
+            }
+
+            // Check if license allows access
+            if (!$licenseState->allows('access')) {
+                return $this->handleInvalidLicense(
+                    $request,
+                    'License does not allow access to this resource',
+                    $licenseState
                 );
             }
 
             // Store in session if caching is enabled
             if ($this->isSessionCachingEnabled()) {
-                $this->storeLicenseInSession($request, $licenseKey, $result);
+                $this->storeLicenseInSession($request, $licenseKey, $licenseState);
             }
 
-            // Attach license data to request for use in controllers
-            $request->merge(['_license_data' => $result['data'] ?? []]);
+            // Attach license state to request for use in controllers
+            $request->merge([
+                '_license_state' => $licenseState,
+                '_license_key' => $licenseKey,
+            ]);
 
             return $next($request);
+        } catch (LicenseException $e) {
+            return $this->handleLicenseException($request, $e);
         } catch (Exception $e) {
-            return $this->handleInvalidLicense($request, $e->getMessage());
+            return $this->handleInvalidLicense($request, $e->getMessage(), null);
         }
     }
 
@@ -140,16 +176,41 @@ class ValidateLicense
      *
      * @param Request $request
      * @param string $licenseKey
-     * @param array $result
+     * @param mixed $licenseState
      * @return void
      */
-    protected function storeLicenseInSession(Request $request, string $licenseKey, array $result): void
+    protected function storeLicenseInSession(Request $request, string $licenseKey, $licenseState): void
     {
         $request->session()->put($this->getSessionKey(), [
             'license_key' => $licenseKey,
-            'result' => $result,
+            'state' => $licenseState->getState(),
+            'is_valid' => $licenseState->isValid(),
             'cached_at' => time(),
         ]);
+    }
+
+    /**
+     * Handle license exception with API response codes
+     *
+     * @param Request $request
+     * @param LicenseException $exception
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     */
+    protected function handleLicenseException(Request $request, LicenseException $exception)
+    {
+        $apiCode = $exception->getApiCode();
+        $message = $exception->getMessage();
+
+        // Handle specific API response codes
+        $userMessage = match($apiCode) {
+            ApiResponseCode::LICENSE_EXPIRED => 'Your license has expired. Please renew to continue.',
+            ApiResponseCode::LICENSE_BLOCKED => 'Your license has been blocked. Please contact support.',
+            ApiResponseCode::ACTIVATION_LIMIT_REACHED => 'License activation limit reached.',
+            ApiResponseCode::INVALID_LICENSE_KEY => 'Invalid license key provided.',
+            default => $message,
+        };
+
+        return $this->handleInvalidLicense($request, $userMessage, null, $apiCode);
     }
 
     /**
@@ -157,9 +218,11 @@ class ValidateLicense
      *
      * @param Request $request
      * @param string $message
+     * @param mixed|null $licenseState
+     * @param int|null $apiCode
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    protected function handleInvalidLicense(Request $request, string $message)
+    protected function handleInvalidLicense(Request $request, string $message, $licenseState = null, ?int $apiCode = null)
     {
         // Clear session cache
         if ($this->isSessionCachingEnabled()) {
@@ -168,15 +231,28 @@ class ValidateLicense
 
         // Handle JSON requests
         if ($request->expectsJson()) {
-            return response()->json([
+            $response = [
                 'success' => false,
                 'message' => $message,
-            ], 403);
+            ];
+
+            if ($apiCode !== null) {
+                $response['api_code'] = $apiCode;
+                $response['api_code_name'] = ApiResponseCode::getName($apiCode);
+            }
+
+            if ($licenseState !== null) {
+                $response['state'] = $licenseState->getState();
+            }
+
+            return response()->json($response, 403);
         }
 
         // Redirect with error message
         $redirectTo = config('getkeymanager.middleware.redirect_to', '/license-required');
 
-        return redirect($redirectTo)->with('error', $message);
+        return redirect($redirectTo)
+            ->with('error', $message)
+            ->with('api_code', $apiCode);
     }
 }

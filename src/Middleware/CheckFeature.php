@@ -7,13 +7,17 @@ namespace GetKeyManager\Laravel\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use GetKeyManager\Laravel\Facades\GetKeyManager;
+use GetKeyManager\Laravel\Core\LicenseException;
+use GetKeyManager\Laravel\Core\ApiResponseCode;
 use Exception;
 
 /**
- * Check Feature Middleware
+ * Check Feature Middleware (Hardened)
  * 
  * Protects routes by checking if a specific feature is enabled
- * for the provided license key.
+ * for the provided license key using the hardened LicenseState API.
+ * 
+ * Version 2.0 - Hardened with LicenseState integration
  */
 class CheckFeature
 {
@@ -31,30 +35,32 @@ class CheckFeature
         $licenseKey = $this->getLicenseKey($request);
 
         if (!$licenseKey) {
-            return $this->handleFeatureDisabled($request, 'License key is required');
+            return $this->handleFeatureDisabled($request, 'License key is required', null);
         }
 
         try {
-            // Check feature
-            $result = GetKeyManager::checkFeature($licenseKey, $featureName);
+            // Use hardened feature check API
+            $isAllowed = GetKeyManager::isFeatureAllowed($licenseKey, $featureName);
 
-            // Check if feature is enabled
-            if (!($result['success'] ?? false) || !($result['data']['enabled'] ?? false)) {
+            if (!$isAllowed) {
                 return $this->handleFeatureDisabled(
                     $request,
-                    "Feature '{$featureName}' is not enabled for this license"
+                    "Feature '{$featureName}' is not enabled for this license",
+                    null
                 );
             }
 
-            // Attach feature data to request
+            // Attach feature info to request
             $request->merge([
-                '_feature_data' => $result['data'] ?? [],
                 '_feature_name' => $featureName,
+                '_feature_allowed' => true,
             ]);
 
             return $next($request);
+        } catch (LicenseException $e) {
+            return $this->handleLicenseException($request, $e, $featureName);
         } catch (Exception $e) {
-            return $this->handleFeatureDisabled($request, $e->getMessage());
+            return $this->handleFeatureDisabled($request, $e->getMessage(), null);
         }
     }
 
@@ -66,12 +72,28 @@ class CheckFeature
      */
     protected function getLicenseKey(Request $request): ?string
     {
-        // Priority order: Header > Query > Body > Session > License Data (from previous middleware)
+        // Priority order: Header > Query > Body > Session > Previous middleware
         return $request->header('X-License-Key')
             ?? $request->query('license_key')
             ?? $request->input('license_key')
             ?? $request->session()->get('license_validation.license_key')
-            ?? ($request->get('_license_data')['license_key'] ?? null);
+            ?? $request->get('_license_key');
+    }
+
+    /**
+     * Handle license exception
+     *
+     * @param Request $request
+     * @param LicenseException $exception
+     * @param string $featureName
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     */
+    protected function handleLicenseException(Request $request, LicenseException $exception, string $featureName)
+    {
+        $apiCode = $exception->getApiCode();
+        $message = "Feature '{$featureName}' check failed: " . $exception->getMessage();
+
+        return $this->handleFeatureDisabled($request, $message, $apiCode);
     }
 
     /**
@@ -79,21 +101,31 @@ class CheckFeature
      *
      * @param Request $request
      * @param string $message
+     * @param int|null $apiCode
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    protected function handleFeatureDisabled(Request $request, string $message)
+    protected function handleFeatureDisabled(Request $request, string $message, ?int $apiCode = null)
     {
         // Handle JSON requests
         if ($request->expectsJson()) {
-            return response()->json([
+            $response = [
                 'success' => false,
                 'message' => $message,
-            ], 403);
+            ];
+
+            if ($apiCode !== null) {
+                $response['api_code'] = $apiCode;
+                $response['api_code_name'] = ApiResponseCode::getName($apiCode);
+            }
+
+            return response()->json($response, 403);
         }
 
         // Redirect with error message
         $redirectTo = config('getkeymanager.middleware.redirect_to', '/license-required');
 
-        return redirect($redirectTo)->with('error', $message);
+        return redirect($redirectTo)
+            ->with('error', $message)
+            ->with('api_code', $apiCode);
     }
 }

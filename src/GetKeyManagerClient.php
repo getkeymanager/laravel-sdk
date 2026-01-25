@@ -5,19 +5,31 @@ declare(strict_types=1);
 namespace GetKeyManager\Laravel;
 
 use GetKeyManager\SDK\LicenseClient;
+use GetKeyManager\Laravel\Core\LicenseState;
+use GetKeyManager\Laravel\Core\EntitlementState;
+use GetKeyManager\Laravel\Core\StateResolver;
+use GetKeyManager\Laravel\Core\StateStore;
+use GetKeyManager\Laravel\Core\SignatureVerifier;
+use GetKeyManager\Laravel\Core\ApiResponseCode;
+use GetKeyManager\Laravel\Core\LicenseException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Exception;
 
 /**
  * Laravel-specific wrapper for License Manager SDK
  * 
  * Provides Laravel-friendly interface with logging, caching,
- * and exception handling.
+ * exception handling, and hardened license state management.
+ * 
+ * Version 2.0 - Hardened with LicenseState integration
  */
 class GetKeyManagerClient
 {
     private LicenseClient $client;
     private array $config;
+    private StateResolver $stateResolver;
+    private StateStore $stateStore;
 
     /**
      * Initialize the client
@@ -41,6 +53,22 @@ class GetKeyManagerClient
             'retryAttempts' => $config['retry_attempts'],
             'retryDelay' => $config['retry_delay'],
         ]);
+        
+        // Initialize hardening components
+        $verifier = $config['verify_signatures'] && !empty($config['public_key'])
+            ? new SignatureVerifier($config['public_key'])
+            : null;
+            
+        $this->stateResolver = new StateResolver(
+            $verifier,
+            $config['environment'] ?? null,
+            $config['product_id'] ?? null
+        );
+        
+        $this->stateStore = new StateStore(
+            $verifier,
+            $config['state_cache_ttl'] ?? 3600 // Default 1 hour
+        );
     }
 
     /**
@@ -51,6 +79,140 @@ class GetKeyManagerClient
     public function getClient(): LicenseClient
     {
         return $this->client;
+    }
+
+    /**
+     * Resolve license state from validation (Hardened API)
+     * 
+     * This is the recommended way to validate licenses. It returns a LicenseState
+     * object that provides multiple enforcement layers and handles grace periods.
+     *
+     * @param string $licenseKey License key to validate
+     * @param array $options Validation options
+     * @return LicenseState License state object
+     * @throws LicenseException On validation errors
+     */
+    public function resolveLicenseState(string $licenseKey, array $options = []): LicenseState
+    {
+        $stateKey = $this->getStateKey($licenseKey);
+        
+        // Try to get cached state first
+        if ($this->config['cache_enabled'] ?? false) {
+            try {
+                $cachedEntitlementState = $this->stateStore->get($stateKey);
+                if ($cachedEntitlementState !== null) {
+                    return new LicenseState($cachedEntitlementState, $licenseKey);
+                }
+            } catch (\Exception $e) {
+                // Cached state invalid - continue to revalidate
+            }
+        }
+        
+        // Perform API validation
+        try {
+            $response = $this->client->validateLicense($licenseKey, $options);
+            
+            // Resolve state from response
+            $licenseState = $this->stateResolver->resolveFromValidation($response, $licenseKey);
+            
+            // Store EntitlementState in cache
+            if ($this->config['cache_enabled'] ?? false) {
+                $this->stateStore->set($stateKey, $licenseState->getEntitlementState());
+            }
+            
+            if ($this->isLoggingEnabled()) {
+                Log::channel($this->getLogChannel())->info('License state resolved', [
+                    'license_key' => substr($licenseKey, 0, 8) . '...',
+                    'state' => $licenseState->getState(),
+                    'is_valid' => $licenseState->isValid(),
+                ]);
+            }
+            
+            return $licenseState;
+        } catch (Exception $e) {
+            if ($this->isLoggingEnabled()) {
+                Log::channel($this->getLogChannel())->error('License state resolution failed', [
+                    'license_key' => substr($licenseKey, 0, 8) . '...',
+                    'error' => $e->getMessage(),
+                ]);
+            }
+            
+            throw $e;
+        }
+    }
+
+    /**
+     * Get cached license state without API call
+     * 
+     * Returns null if no cached state exists or if cache has expired.
+     *
+     * @param string $licenseKey License key
+     * @return LicenseState|null Cached license state or null
+     */
+    public function getLicenseState(string $licenseKey): ?LicenseState
+    {
+        $stateKey = $this->getStateKey($licenseKey);
+        
+        try {
+            $cachedEntitlementState = $this->stateStore->get($stateKey);
+            if ($cachedEntitlementState !== null) {
+                return new LicenseState($cachedEntitlementState, $licenseKey);
+            }
+        } catch (\Exception $e) {
+            // Ignore exceptions for cached reads
+        }
+        
+        return null;
+    }
+
+    /**
+     * Check if a specific feature is allowed for a license
+     * 
+     * This method uses the EntitlementState capabilities to check feature access.
+     *
+     * @param string $licenseKey License key
+     * @param string $featureName Feature name to check
+     * @param array $options Additional options
+     * @return bool True if feature is allowed
+     * @throws LicenseException On errors
+     */
+    public function isFeatureAllowed(string $licenseKey, string $featureName, array $options = []): bool
+    {
+        $state = $this->resolveLicenseState($licenseKey, $options);
+        return $state->allows($featureName);
+    }
+
+    /**
+     * Clear cached state for a license key
+     *
+     * @param string $licenseKey License key
+     * @return void
+     */
+    public function clearLicenseState(string $licenseKey): void
+    {
+        $stateKey = $this->getStateKey($licenseKey);
+        $this->stateStore->remove($stateKey);
+    }
+
+    /**
+     * Clear all cached license states
+     *
+     * @return void
+     */
+    public function clearAllLicenseStates(): void
+    {
+        $this->stateStore->clear();
+    }
+    
+    /**
+     * Get state cache key for a license
+     *
+     * @param string $licenseKey License key
+     * @return string Cache key
+     */
+    private function getStateKey(string $licenseKey): string
+    {
+        return $this->stateStore->getValidationKey($licenseKey);
     }
 
     /**
@@ -242,5 +404,15 @@ class GetKeyManagerClient
     private function getLogChannel(): string
     {
         return $this->config['logging']['channel'] ?? 'stack';
+    }
+    
+    /**
+     * Get state cache TTL in seconds
+     *
+     * @return int
+     */
+    private function getStateCacheTtl(): int
+    {
+        return $this->config['state_cache_ttl'] ?? 3600; // Default 1 hour
     }
 }

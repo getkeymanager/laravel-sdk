@@ -129,4 +129,37 @@ return [
         'enabled' => env('LICENSE_MANAGER_LOGGING', false),
         'channel' => env('LICENSE_MANAGER_LOG_CHANNEL', 'stack'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | State Cache TTL (Hardening Feature)
+    |--------------------------------------------------------------------------
+    |
+    | Time-to-live in seconds for cached LicenseState objects.
+    | This is separate from the API response cache and is used for
+    | hardened license state management.
+    |
+    */
+    'state_cache_ttl' => env('LICENSE_MANAGER_STATE_CACHE_TTL', 3600), // 1 hour
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product ID (Optional)
+    |--------------------------------------------------------------------------
+    |
+    | Default product ID for license operations. Can be overridden per-request.
+    |
+    */
+    'product_id' => env('LICENSE_MANAGER_PRODUCT_ID', null),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Grace Period Hours (Hardening Feature)
+    |--------------------------------------------------------------------------
+    |
+    | Number of hours to allow grace period when license verification fails
+    | due to network errors. Set to 0 to disable grace period.
+    |
+    */
+    'grace_period_hours' => env('LICENSE_MANAGER_GRACE_PERIOD_HOURS', 72), // 3 days
 ];

@@ -57,6 +57,7 @@ class GetKeyManagerServiceProvider extends ServiceProvider
                 Commands\LicenseValidateCommand::class,
                 Commands\LicenseActivateCommand::class,
                 Commands\LicenseDeactivateCommand::class,
+                Commands\LicenseCheckStateCommand::class,
             ]);
         }
 
