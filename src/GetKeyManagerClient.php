@@ -40,13 +40,16 @@ class GetKeyManagerClient
     {
         $this->config = $config;
         
+        // Load public key from file if configured
+        $publicKey = $this->loadPublicKey($config);
+        
         // Initialize the base SDK client
         $this->client = new LicenseClient([
             'apiKey' => $config['api_key'],
             'baseUrl' => $config['base_url'],
             'environment' => $config['environment'] ?? null,
             'verifySignatures' => $config['verify_signatures'],
-            'publicKey' => $config['public_key'] ?? null,
+            'publicKey' => $publicKey,
             'timeout' => $config['timeout'],
             'cacheEnabled' => $config['cache_enabled'],
             'cacheTtl' => $config['cache_ttl'],
@@ -55,8 +58,8 @@ class GetKeyManagerClient
         ]);
         
         // Initialize hardening components
-        $verifier = $config['verify_signatures'] && !empty($config['public_key'])
-            ? new SignatureVerifier($config['public_key'])
+        $verifier = $config['verify_signatures'] && !empty($publicKey)
+            ? new SignatureVerifier($publicKey)
             : null;
             
         $this->stateResolver = new StateResolver(
@@ -67,8 +70,71 @@ class GetKeyManagerClient
         
         $this->stateStore = new StateStore(
             $verifier,
-            $config['state_cache_ttl'] ?? 3600 // Default 1 hour
+            intval($config['state_cache_ttl']) ?? 3600 // Default 1 hour
         );
+    }
+
+    /**
+     * Load public key from file or configuration
+     *
+     * @param array $config Configuration array
+     * @return string|null Public key content or null
+     * @throws LicenseException If public key file cannot be read
+     */
+    private function loadPublicKey(array $config): ?string
+    {
+        // Try to load from public_key_file first (preferred method)
+        if (!empty($config['public_key_file'])) {
+            $filePath = $this->resolvePath($config['public_key_file']);
+            
+            if (!file_exists($filePath)) {
+                throw new LicenseException(
+                    "Public key file not found: {$config['public_key_file']}",
+                    LicenseException::ERROR_INVALID_PUBLIC_KEY
+                );
+            }
+            
+            $content = file_get_contents($filePath);
+            if ($content === false) {
+                throw new LicenseException(
+                    "Cannot read public key file: {$config['public_key_file']}",
+                    LicenseException::ERROR_INVALID_PUBLIC_KEY
+                );
+            }
+            
+            return trim($content);
+        }
+        
+        // Fall back to public_key from config (deprecated)
+        return !empty($config['public_key']) ? $config['public_key'] : null;
+    }
+
+    /**
+     * Resolve file path with support for Laravel paths
+     *
+     * @param string $path File path (can use storage_path, config_path, base_path)
+     * @return string Resolved absolute path
+     */
+    private function resolvePath(string $path): string
+    {
+        // Support Laravel path helpers in string format
+        if (strpos($path, 'storage_path:') === 0) {
+            return storage_path(substr($path, 13));
+        }
+        if (strpos($path, 'config_path:') === 0) {
+            return config_path(substr($path, 12));
+        }
+        if (strpos($path, 'base_path:') === 0) {
+            return base_path(substr($path, 10));
+        }
+        
+        // If path starts with /, it's already absolute
+        if (strpos($path, '/') === 0) {
+            return $path;
+        }
+        
+        // Relative paths are resolved from project root
+        return base_path($path);
     }
 
     /**
@@ -336,6 +402,31 @@ class GetKeyManagerClient
     public function generateUuid(): string
     {
         return $this->client->generateUuid();
+    }
+
+    /**
+     * Send telemetry data (simplified Laravel interface)
+     * 
+     * This is a Laravel-friendly wrapper that accepts license key and arbitrary data.
+     * The data is automatically formatted for the platform's telemetry API.
+     *
+     * @param string $licenseKey License key
+     * @param array $data Telemetry data (arbitrary key-value pairs)
+     * @param array $options Additional options
+     * @return array
+     * @throws Exception
+     */
+    public function sendTelemetry(string $licenseKey, array $data, array $options = []): array
+    {
+        return $this->executeWithLogging('sendTelemetry', function () use ($licenseKey, $data, $options) {
+            // Format data for the platform's telemetry API (use 'text' type for general-purpose telemetry)
+            $dataType = 'text';
+            $dataGroup = 'application';
+            $dataValues = ['text' => json_encode($data)];
+            $mergedOptions = array_merge(['license_key' => $licenseKey], $options);
+            
+            return $this->client->sendTelemetry($dataType, $dataGroup, $dataValues, $mergedOptions);
+        });
     }
 
     /**

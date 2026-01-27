@@ -48,11 +48,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Public Key
+    | Public Key File Path
     |--------------------------------------------------------------------------
     |
-    | RSA public key for signature verification. Required if signature
-    | verification is enabled. Get this from your product settings.
+    | Path to the RSA public key file for signature verification.
+    | Required if signature verification is enabled.
+    | 
+    | The key should be stored in a .pem file. The application will
+    | automatically load the key from this path.
+    |
+    | Example paths:
+    | - storage/app/public_key.pem
+    | - config/keys/public_key.pem
+    | - ~/.ssh/getkeymanager_public_key.pem
+    |
+    */
+    'public_key_file' => env('LICENSE_MANAGER_PUBLIC_KEY_FILE', null),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public Key (Legacy - Deprecated)
+    |--------------------------------------------------------------------------
+    |
+    | Deprecated: Use 'public_key_file' instead.
+    | If 'public_key_file' is not set, this will be checked for backward
+    | compatibility. However, reading from a file is the recommended approach.
     |
     */
     'public_key' => env('LICENSE_MANAGER_PUBLIC_KEY', null),
