@@ -178,6 +178,11 @@ final class ApiResponseCode
     public const CHANGELOG_DISABLED_GLOBALLY = 1601;
     public const CHANGELOG_DISABLED_FOR_PRODUCT = 1602;
 
+    // Product Information API [630-649]
+    public const PRODUCT_FOUND = 631;
+    public const PRODUCT_PUBLIC_KEY_FOUND = 632;
+    public const PRODUCT_PUBLIC_KEY_NOT_FOUND = 633;
+
     /**
      * Get the constant name for a code (for debugging/logging)
      * 
@@ -297,6 +302,9 @@ final class ApiResponseCode
             self::CHANGELOG_RETRIEVED => 'Changelog retrieved successfully',
             self::CHANGELOG_DISABLED_GLOBALLY => 'Changelog feature is disabled globally',
             self::CHANGELOG_DISABLED_FOR_PRODUCT => 'Changelog not enabled for this product',
+            self::PRODUCT_FOUND => 'Product information retrieved successfully',
+            self::PRODUCT_PUBLIC_KEY_FOUND => 'Public key retrieved successfully',
+            self::PRODUCT_PUBLIC_KEY_NOT_FOUND => 'Public key not available for product',
             default => 'Unknown response code',
         };
     }
@@ -346,6 +354,8 @@ final class ApiResponseCode
             self::CONTRACT_LICENSE_KEYS_DELETED,
             self::TELEMETRY_DATA_FOUND,
             self::CHANGELOG_RETRIEVED,
+            self::PRODUCT_FOUND,
+            self::PRODUCT_PUBLIC_KEY_FOUND,
         ], true);
     }
 

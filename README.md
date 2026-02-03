@@ -1,4 +1,5 @@
-# License Manager Laravel SDK
+# KeyManager - License Manager Laravel SDK
+For KeyManager (https://getkeymanager.com).
 
 [![Latest Version](https://img.shields.io/packagist/v/getkeymanager/laravel-sdk.svg)](https://packagist.org/packages/getkeymanager/laravel-sdk)
 [![License](https://img.shields.io/packagist/l/getkeymanager/laravel-sdk.svg)](https://packagist.org/packages/getkeymanager/laravel-sdk)
@@ -427,10 +428,11 @@ See the [examples directory](./examples) for complete working examples.
 
 ## Support
 
-- 📧 Email: support@getkeymanager.com
-- 📚 Documentation: https://docs.getkeymanager.com
-- 🐛 Issues: https://github.com/getkeymanager/laravel-sdk/issues
-
+- **Website**: https://getkeymanager.com
+- **Documentation**: https://docs.getkeymanager.com
+- **API Reference**: https://dev.getkeymanager.com/api
+- **Issues**: https://github.com/getkeymanager/laravel-sdk/issues
+- **Email**: support@getkeymanager.com
 ## License
 
 This SDK is open-sourced software licensed under the [MIT license](LICENSE).

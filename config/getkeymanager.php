@@ -18,10 +18,10 @@ return [
     |--------------------------------------------------------------------------
     |
     | The base URL for the License Management Platform API.
-    | Default: https://api.getkeymanager.com
+    | Default: https://dev.getkeymanager.com/api
     |
     */
-    'base_url' => env('LICENSE_MANAGER_BASE_URL', 'https://api.getkeymanager.com'),
+    'base_url' => env('LICENSE_MANAGER_BASE_URL', 'https://dev.getkeymanager.com/api'),
 
     /*
     |--------------------------------------------------------------------------
