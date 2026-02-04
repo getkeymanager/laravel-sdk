@@ -7,7 +7,7 @@ namespace GetKeyManager\Laravel\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use GetKeyManager\Laravel\Facades\GetKeyManager;
-use GetKeyManager\Laravel\Core\LicenseException;
+use GetKeyManager\Laravel\Core\Exceptions\LicenseException;
 use GetKeyManager\Laravel\Core\ApiResponseCode;
 use Exception;
 

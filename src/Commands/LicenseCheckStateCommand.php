@@ -6,7 +6,7 @@ namespace GetKeyManager\Laravel\Commands;
 
 use Illuminate\Console\Command;
 use GetKeyManager\Laravel\Facades\GetKeyManager;
-use GetKeyManager\Laravel\Core\LicenseException;
+use GetKeyManager\Laravel\Core\Exceptions\LicenseException;
 use GetKeyManager\Laravel\Core\ApiResponseCode;
 use Exception;
 

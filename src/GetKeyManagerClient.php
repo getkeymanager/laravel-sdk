@@ -11,7 +11,7 @@ use GetKeyManager\Laravel\Core\StateResolver;
 use GetKeyManager\Laravel\Core\StateStore;
 use GetKeyManager\Laravel\Core\SignatureVerifier;
 use GetKeyManager\Laravel\Core\ApiResponseCode;
-use GetKeyManager\Laravel\Core\LicenseException;
+use GetKeyManager\Laravel\Core\Exceptions\LicenseException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Exception;
