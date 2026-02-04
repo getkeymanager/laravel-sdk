@@ -412,18 +412,49 @@ class GetKeyManagerClient
      *
      * @param string $licenseKey License key
      * @param array $data Telemetry data (arbitrary key-value pairs)
-     * @param array $options Additional options
+     * @param array $options Additional options (dataType, dataGroup, etc.)
      * @return array
      * @throws Exception
      */
     public function sendTelemetry(string $licenseKey, array $data, array $options = []): array
     {
         return $this->executeWithLogging('sendTelemetry', function () use ($licenseKey, $data, $options) {
-            // Format data for the platform's telemetry API (use 'text' type for general-purpose telemetry)
-            $dataType = 'text';
-            $dataGroup = 'application';
-            $dataValues = ['text' => json_encode($data)];
+            // Extract core fields from data if present, otherwise use defaults from options or hardcoded
+            $dataType = $data['data_type'] ?? $options['dataType'] ?? 'text';
+            $dataGroup = $data['data_group'] ?? $options['dataGroup'] ?? 'application';
+            
+            // Clean up original data to avoid duplication in metadata/text_data
+            $cleanData = $data;
+            unset($cleanData['data_type'], $cleanData['data_group']);
+            
+            // Map common fields from data to options if they exist
+            $standardFields = [
+                'hwid', 'country', 'flags', 'metadata', 
+                'user_identifier', 'product_id', 'product_version', 
+                'activation_identifier'
+            ];
+            
             $mergedOptions = array_merge(['license_key' => $licenseKey], $options);
+            
+            foreach ($standardFields as $field) {
+                if (isset($data[$field])) {
+                    $mergedOptions[$field] = $data[$field];
+                    unset($cleanData[$field]);
+                }
+            }
+
+            // Prepare data values based on resolved type
+            $dataValues = [];
+            if ($dataType === 'text') {
+                // For text type, we either use 'text_data' if provided, or JSON encode the remaining data
+                $dataValues['text'] = $data['text_data'] ?? json_encode($cleanData);
+            } else {
+                // For numeric types, we use the provided data directly (expects 'value' or 'x', 'y')
+                $dataValues = $cleanData;
+                if (!isset($dataValues['value']) && isset($data['value'])) $dataValues['value'] = $data['value'];
+                if (!isset($dataValues['x']) && isset($data['x'])) $dataValues['x'] = $data['x'];
+                if (!isset($dataValues['y']) && isset($data['y'])) $dataValues['y'] = $data['y'];
+            }
             
             return $this->client->sendTelemetry($dataType, $dataGroup, $dataValues, $mergedOptions);
         });
