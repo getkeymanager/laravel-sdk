@@ -18,6 +18,18 @@ Official Laravel SDK for [License Management Platform](https://getkeymanager.com
 - ⚡ **Session Caching** - Automatic session-based caching
 - 🔄 **Laravel 10, 11, 12** - Multi-version compatibility
 
+## New in v2.1.0 (Base PHP SDK)
+
+The Laravel SDK wraps the core PHP SDK, which now includes:
+
+- ✅ **New endpoints**: `getLicenseFile()`, `getProductMeta()`, `getProduct()`, `getProductChangelog()`, `getProductPublicKey()`
+- ✅ **New response codes**: LICENSE_FILE_RETRIEVED (502), LICENSE_FILE_GENERATION_FAILED (503), LICENSE_KEY_NOT_FOUND_DETAILS (501), PRODUCT_FOUND (631), PRODUCT_PUBLIC_KEY_FOUND (632), PRODUCT_PUBLIC_KEY_NOT_FOUND (633)
+- ✅ **Offline .lic parsing**: `parseLicenseFile()` (Base64 decode → 256-byte chunks → RSA PKCS1 decrypt → JSON)
+- ✅ **License/key sync**: `syncLicenseAndKey()` with atomic file updates + telemetry
+- ✅ **Validation timers**: `isCheckIntervalPast()` and `isForceValidationPast()` (fail-safe true on error)
+
+> Note: The offline file utilities (`parseLicenseFile`, `syncLicenseAndKey`, interval helpers) are available on the core PHP SDK `LicenseValidator`. Use the base SDK for these low-level operations.
+
 ## Requirements
 
 - PHP 8.1 or higher

@@ -5,6 +5,13 @@ All notable changes to the License Manager Laravel SDK will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-02-04
+
+### Added
+- Integration with base PHP SDK v2.1.0
+- Support for `getLicenseFile()`, `getProductMeta()`, `getProduct()`, `getProductChangelog()`, `getProductPublicKey()`
+- Support for offline validation utilities via core `LicenseValidator`
+
 ## [1.0.0] - 2024-01-15
 
 ### Added

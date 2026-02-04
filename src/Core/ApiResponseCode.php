@@ -51,6 +51,9 @@ final class ApiResponseCode
 
     // Get License Key Details [500-549]
     public const ACTIVE_LICENSE_FOUND = 500;
+    public const LICENSE_KEY_NOT_FOUND_DETAILS = 501;
+    public const LICENSE_FILE_RETRIEVED = 502;
+    public const LICENSE_FILE_GENERATION_FAILED = 503;
 
     // Delete Product [550-599]
     public const PRODUCT_DELETED = 550;
