@@ -51,19 +51,73 @@ return [
     | Public Key File Path
     |--------------------------------------------------------------------------
     |
-    | Path to the RSA public key file for signature verification.
-    | Required if signature verification is enabled.
+    | Path to the RSA public key file for signature verification AND offline
+    | license file validation. Required if signature verification is enabled
+    | or if you want to support offline .lic file validation.
     | 
     | The key should be stored in a .pem file. The application will
     | automatically load the key from this path.
     |
+    | This same key is used for:
+    | 1. Verifying API response signatures
+    | 2. Decrypting and validating offline .lic files
+    |
     | Example paths:
-    | - storage/app/public_key.pem
+    | - storage/app/keys/product_public.pem
     | - config/keys/public_key.pem
     | - ~/.ssh/getkeymanager_public_key.pem
     |
     */
     'public_key_file' => env('LICENSE_MANAGER_PUBLIC_KEY_FILE', null),
+
+    /*
+    |--------------------------------------------------------------------------
+    | License File Path (For Offline Validation)
+    |--------------------------------------------------------------------------
+    |
+    | Directory where downloaded .lic files are stored for offline validation.
+    | When configured, LicenseClient will first try to validate using a
+    | cached .lic file before falling back to API calls.
+    |
+    | This enables fast, offline-first license validation even without
+    | network connectivity (within expiry bounds).
+    |
+    | The application requires read access to this directory.
+    |
+    | Example paths:
+    | - storage/app/licenses
+    | - storage/licenses
+    | - /var/cache/app/licenses
+    |
+    | If not configured, offline validation will be skipped and the SDK
+    | will always call the API for license validation.
+    |
+    */
+    'license_file_path' => env('LICENSE_MANAGER_LICENSE_FILE_PATH', null),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Identifier (For Configuration Inheritance)
+    |--------------------------------------------------------------------------
+    |
+    | Default domain or hardware ID used across license operations.
+    | When not explicitly provided to validate(), activate(), or deactivate()
+    | methods, this value will be used automatically.
+    |
+    | This reduces repetitive parameter passing in single-tenant or
+    | single-device scenarios.
+    |
+    | Example values:
+    | - 'example.com' (for web applications)
+    | - 'server-01.internal' (for server installations)
+    | - null (auto-detect based on environment)
+    |
+    | If null, identifiers are auto-generated based on context:
+    | - Web requests: $_SERVER['HTTP_HOST']
+    | - CLI/Background: hardware ID of current machine
+    |
+    */
+    'default_identifier' => env('LICENSE_MANAGER_DEFAULT_IDENTIFIER', null),
 
     /*
     |--------------------------------------------------------------------------

@@ -5,30 +5,30 @@ For KeyManager (https://getkeymanager.com).
 [![License](https://img.shields.io/packagist/l/getkeymanager/laravel-sdk.svg)](https://packagist.org/packages/getkeymanager/laravel-sdk)
 [![Total Downloads](https://img.shields.io/packagist/dt/getkeymanager/laravel-sdk.svg)](https://packagist.org/packages/getkeymanager/laravel-sdk)
 
+**Version: 3.0.0** - Identifier-first with configuration inheritance and offline-first validation!
+
 Official Laravel SDK for [License Management Platform](https://getkeymanager.com). Elegant license validation, activation, and management for Laravel applications with built-in middleware, Artisan commands, and facade support.
 
 ## Features
 
 - 🚀 **Easy Integration** - Service provider auto-discovery, zero configuration
-- 🎨 **Laravel-Native** - Facades, middleware, Artisan commands
-- 🔒 **Route Protection** - Protect routes with license validation middleware
+- 🧐 **Laravel-Native** - Facades, middleware, Artisan commands
+- 🔐 **Route Protection** - Protect routes with license validation middleware
 - 🎯 **Feature Flags** - Feature-gate middleware for license-based features
-- 🛠️ **CLI Commands** - Artisan commands for license operations
-- 📝 **Full Logging** - Optional Laravel logging integration
+- 🔨 **CLI Commands** - Artisan commands for license operations
+- 📏 **Full Logging** - Optional Laravel logging integration
 - ⚡ **Session Caching** - Automatic session-based caching
 - 🔄 **Laravel 10, 11, 12** - Multi-version compatibility
+- **NEW v3.0.0:** Configuration inheritance, offline-first validation, identifier parameters, type-safe DTOs
 
-## New in v2.1.0 (Base PHP SDK)
+## New in v3.0.0 - BREAKING CHANGES
 
-The Laravel SDK wraps the core PHP SDK, which now includes:
-
-- ✅ **New endpoints**: `getLicenseFile()`, `getProductMeta()`, `getProduct()`, `getProductChangelog()`, `getProductPublicKey()`
-- ✅ **New response codes**: LICENSE_FILE_RETRIEVED (502), LICENSE_FILE_GENERATION_FAILED (503), LICENSE_KEY_NOT_FOUND_DETAILS (501), PRODUCT_FOUND (631), PRODUCT_PUBLIC_KEY_FOUND (632), PRODUCT_PUBLIC_KEY_NOT_FOUND (633)
-- ✅ **Offline .lic parsing**: `parseLicenseFile()` (Base64 decode → 256-byte chunks → RSA PKCS1 decrypt → JSON)
-- ✅ **License/key sync**: `syncLicenseAndKey()` with atomic file updates + telemetry
-- ✅ **Validation timers**: `isCheckIntervalPast()` and `isForceValidationPast()` (fail-safe true on error)
-
-> Note: The offline file utilities (`parseLicenseFile`, `syncLicenseAndKey`, interval helpers) are available on the core PHP SDK `LicenseValidator`. Use the base SDK for these low-level operations.
+- ✅ **Mandatory Identifier Parameter** - Use `default_identifier` in config or pass explicitly
+- ✅ **Configuration Inheritance** - Set `license_file_path`, `default_identifier`, enhanced `public_key_file` in config
+- ✅ **Offline-First Validation** - Automatically validates against cached .lic file before API
+- ✅ **Type-Safe Methods** - Import and use Constants: `ValidationType`, `IdentifierType`
+- ✅ **Enhanced Error Messages** - Actionable errors with documentation links
+- ⚠️ **MIGRATION REQUIRED:** See migration guide in config file
 
 ## Requirements
 
@@ -66,30 +66,45 @@ LICENSE_MANAGER_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY
 
 ## Quick Start
 
+### Configuration Setup
+
+Publish and configure in `config/getkeymanager.php`:
+
+```php
+'license_file_path' => env('LICENSE_FILE_PATH', 'storage/licenses'),
+'default_identifier' => env('DEFAULT_IDENTIFIER', null), // or 'example.com'
+'public_key_file' => storage_path('keys/public.pem'),
+```
+
 ### Using the Facade
 
 ```php
 use GetKeyManager\Laravel\Facades\GetKeyManager;
+use GetKeyManager\SDK\Constants\ValidationType;
 
-// Validate a license
-$result = GetKeyManager::validateLicense('XXXXX-XXXXX-XXXXX-XXXXX', [
-    'hardwareId' => GetKeyManager::generateHardwareId()
-]);
+// Validate with auto-generated identifier
+$result = GetKeyManager::validateLicense('XXXXX-XXXXX-XXXXX-XXXXX');
+
+// Or validate with specific identifier
+$result = GetKeyManager::validateLicense(
+    'XXXXX-XXXXX-XXXXX-XXXXX',
+    'example.com',  // Domain identifier
+    null,           // Will use config's public key
+    ValidationType::OFFLINE_FIRST  // Try cache first
+);
 
 if ($result['success']) {
     echo "License is valid!";
 }
 
 // Activate a license
-$result = GetKeyManager::activateLicense('XXXXX-XXXXX-XXXXX-XXXXX', [
-    'hardwareId' => GetKeyManager::generateHardwareId(),
-    'name' => 'Production Server'
-]);
+$result = GetKeyManager::activateLicense(
+    'XXXXX-XXXXX-XXXXX-XXXXX',
+    'workstation-01'  // Required identifier
+);
 
-// Check a feature
-$result = GetKeyManager::checkFeature('XXXXX-XXXXX-XXXXX-XXXXX', 'advanced-features');
-
-if ($result['data']['enabled']) {
+// Check a feature (fail-secure: returns false on any error)
+if (GetKeyManager::checkFeature('XXXXX-XXXXX-XXXXX-XXXXX', 'advanced-features')) {
     echo "Feature is enabled!";
 }
 ```

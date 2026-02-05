@@ -1,5 +1,6 @@
 {
   "name": "getkeymanager/laravel-sdk",
+  "version": "3.0.0",
   "description": "Official Laravel SDK for License Management Platform - Elegant license validation, activation, and management for Laravel applications",
   "type": "library",
   "keywords": [
@@ -32,7 +33,7 @@
     "illuminate/support": "^10.0 || ^11.0 || ^12.0",
     "illuminate/console": "^10.0 || ^11.0 || ^12.0",
     "illuminate/http": "^10.0 || ^11.0 || ^12.0",
-    "getkeymanager/php-sdk": "^2.0"
+    "getkeymanager/php-sdk": "^3.0"
   },
   "require-dev": {
     "orchestra/testbench": "^8.0 || ^9.0",
