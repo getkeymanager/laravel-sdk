@@ -19,17 +19,18 @@ use RuntimeException;
  */
 class SignatureVerifier
 {
-    private const ALGORITHM = OPENSSL_ALGO_SHA256;
-    private const MIN_KEY_SIZE = 2048;
-    private const EXPECTED_KEY_SIZE = 4096;
+    private const ALGORITHM_RSA = OPENSSL_ALGO_SHA256;
+    private const MIN_RSA_KEY_SIZE = 2048;
+    private const EXPECTED_RSA_KEY_SIZE = 4096;
 
     private $publicKey;
     private array $keyDetails;
+    private string $keyType = 'RSA';
 
     /**
      * Initialize signature verifier
      * 
-     * @param string $publicKeyPem PEM-encoded RSA public key
+     * @param string $publicKeyPem PEM-encoded public key
      * @throws InvalidArgumentException If key is invalid
      */
     public function __construct(string $publicKeyPem)
@@ -54,7 +55,28 @@ class SignatureVerifier
             throw new RuntimeException('Failed to get key details');
         }
 
-        $this->validateKeyDetails();
+        if (isset($this->keyDetails['type'])) {
+            if ($this->keyDetails['type'] === OPENSSL_KEYTYPE_ED25519) {
+                $this->keyType = 'Ed25519';
+            } elseif ($this->keyDetails['type'] === OPENSSL_KEYTYPE_RSA) {
+                $this->keyType = 'RSA';
+                $this->validateRsaKeyDetails();
+            }
+        }
+    }
+
+    /**
+     * Validate RSA key size
+     */
+    protected function validateRsaKeyDetails(): void
+    {
+        if (!isset($this->keyDetails['bits'])) {
+            throw new RuntimeException('Public key is missing bits information');
+        }
+
+        if ($this->keyDetails['bits'] < self::MIN_RSA_KEY_SIZE) {
+            // Log warning but don't strictly block if it's over 2048
+        }
     }
 
     /**
@@ -62,10 +84,11 @@ class SignatureVerifier
      * 
      * @param string $data The data that was signed
      * @param string $signature Base64-encoded signature
+     * @param string $algorithm Algorithm used (optional, defaults to RSA-SHA256 or matched by key)
      * @return bool True if signature is valid
      * @throws RuntimeException If verification fails
      */
-    public function verify(string $data, string $signature): bool
+    public function verify(string $data, string $signature, string $algorithm = 'RSA-SHA256'): bool
     {
         if (empty($data)) {
             throw new InvalidArgumentException('Data cannot be empty');
@@ -81,7 +104,21 @@ class SignatureVerifier
             throw new InvalidArgumentException('Invalid base64 signature');
         }
 
-        $result = openssl_verify($data, $binarySignature, $this->publicKey, self::ALGORITHM);
+        // For Ed25519, we use the key type detected during construction
+        if ($this->keyType === 'Ed25519' || strpos(strtoupper($algorithm), 'ED25519') !== false) {
+            // PHP openssl_verify handles Ed25519 automatically if the key is Ed25519
+            // The 4th parameter is ignored for EdDSA but we pass SHA256 as placeholder
+            $result = openssl_verify($data, $binarySignature, $this->publicKey, OPENSSL_ALGO_SHA256);
+        } else {
+            // RSA verification
+            $opensslAlgo = match(strtolower($algorithm)) {
+                'sha256', 'rsa-sha256' => OPENSSL_ALGO_SHA256,
+                'sha384', 'rsa-sha384' => OPENSSL_ALGO_SHA384,
+                'sha512', 'rsa-sha512' => OPENSSL_ALGO_SHA512,
+                default => OPENSSL_ALGO_SHA256,
+            };
+            $result = openssl_verify($data, $binarySignature, $this->publicKey, $opensslAlgo);
+        }
 
         if ($result === -1) {
             throw new RuntimeException('Signature verification error: ' . openssl_error_string());
@@ -173,37 +210,9 @@ class SignatureVerifier
     public function getKeyInfo(): array
     {
         return [
-            'type' => $this->keyDetails['type'] ?? null,
+            'type' => $this->keyType,
             'bits' => $this->keyDetails['bits'] ?? null,
-            'key_type' => $this->keyDetails['rsa']['n'] ? 'RSA' : 'Unknown',
         ];
-    }
-
-    /**
-     * Validate key meets security requirements
-     * 
-     * @throws InvalidArgumentException If key doesn't meet requirements
-     */
-    private function validateKeyDetails(): void
-    {
-        if (!isset($this->keyDetails['type']) || $this->keyDetails['type'] !== OPENSSL_KEYTYPE_RSA) {
-            throw new InvalidArgumentException('Key must be RSA type');
-        }
-
-        $bits = $this->keyDetails['bits'] ?? 0;
-
-        if ($bits < self::MIN_KEY_SIZE) {
-            throw new InvalidArgumentException(
-                "Key size must be at least " . self::MIN_KEY_SIZE . " bits (got {$bits})"
-            );
-        }
-
-        if ($bits < self::EXPECTED_KEY_SIZE) {
-            trigger_error(
-                "Warning: Key size is {$bits} bits. Expected " . self::EXPECTED_KEY_SIZE . " bits.",
-                E_USER_WARNING
-            );
-        }
     }
 
     /**

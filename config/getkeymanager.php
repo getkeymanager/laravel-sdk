@@ -37,6 +37,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Product Details
+    |--------------------------------------------------------------------------
+    |
+    | These values are used for telemetry, updates, and identifying the
+    | current installation state.
+    |
+    */
+    'product_version' => env('LICENSE_MANAGER_PRODUCT_VERSION', ''),
+    'product_numeric_version' => env('LICENSE_MANAGER_PRODUCT_NUMERIC_VERSION', null),
+    'license_key' => env('LICENSE_MANAGER_LICENSE_KEY', ''),
+
+    /*
+    |--------------------------------------------------------------------------
     | Signature Verification
     |--------------------------------------------------------------------------
     |
@@ -183,6 +196,9 @@ return [
     'middleware' => [
         // Redirect route when license validation fails
         'redirect_to' => env('LICENSE_MANAGER_REDIRECT_ROUTE', '/license-required'),
+
+        // Redirect URL for killed/pirated applications (Kill Switch)
+        'killed_redirect_url' => env('LICENSE_MANAGER_KILLED_REDIRECT_URL', 'https://getkeymanager.com/legal-notice'),
 
         // Cache license validation results in session
         'cache_in_session' => true,

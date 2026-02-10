@@ -43,6 +43,11 @@ class ValidateLicense
      */
     public function handle(Request $request, Closure $next, ?string $productId = null, bool $allowGrace = true)
     {
+        // Check for Kill Switch status (Anti-Piracy)
+        if (GetKeyManager::isKilled()) {
+            return $this->handleKilledApplication($request);
+        }
+
         // Get license key from various sources
         $licenseKey = $this->getLicenseKey($request);
 
@@ -254,5 +259,26 @@ class ValidateLicense
         return redirect($redirectTo)
             ->with('error', $message)
             ->with('api_code', $apiCode);
+    }
+
+    /**
+     * Handle requests for a killed application (Kill Switch)
+     */
+    protected function handleKilledApplication(Request $request)
+    {
+        // Handle JSON requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized software copy. This installation has been disabled.',
+                'action' => 'CONTACT_SUPPORT',
+                'support_url' => 'https://getkeymanager.com/support'
+            ], 403);
+        }
+
+        // Redirect to legal notice/support page
+        $redirectUrl = config('getkeymanager.middleware.killed_redirect_url', 'https://getkeymanager.com/legal-notice');
+        
+        return redirect()->away($redirectUrl);
     }
 }

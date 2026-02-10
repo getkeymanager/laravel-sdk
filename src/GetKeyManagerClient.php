@@ -186,7 +186,7 @@ class GetKeyManagerClient
         
         // Perform API validation
         try {
-            $response = $this->client->validateLicense($licenseKey, $options);
+            $response = $this->normalizeApiResponse($this->client->validateLicense($licenseKey, $options));
             
             // Resolve state from response
             $licenseState = $this->stateResolver->resolveFromValidation($response, $licenseKey);
@@ -672,6 +672,29 @@ class GetKeyManagerClient
     }
 
     /**
+     * Download a specific asset using a secure token.
+     * 
+     * @param string $assetUuid Asset UUID
+     * @param string $licenseKey License key
+     * @param string $productUuid Product UUID
+     * @param string $identifier Machine identifier
+     * @param string $secretKey Secure download token
+     * @return string File contents
+     * @throws Exception
+     */
+    public function downloadAsset(
+        string $assetUuid,
+        string $licenseKey,
+        string $productUuid,
+        string $identifier,
+        string $secretKey
+    ): string {
+        return $this->executeWithLogging('downloadAsset', function () use ($assetUuid, $licenseKey, $productUuid, $identifier, $secretKey) {
+            return $this->client->downloadAsset($assetUuid, $licenseKey, $productUuid, $identifier, $secretKey);
+        });
+    }
+
+    /**
      * Generate hardware ID
      *
      * @return string
@@ -772,15 +795,16 @@ class GetKeyManagerClient
     private function executeWithLogging(string $method, callable $callback)
     {
         if (!$this->isLoggingEnabled()) {
-            return $callback();
+            return $this->normalizeApiResponse($callback());
         }
 
         try {
-            $result = $callback();
+            $result = $this->normalizeApiResponse($callback());
+            $success = is_array($result) ? ($result['success'] ?? true) : true;
             
             Log::channel($this->getLogChannel())->info("License Manager: {$method} succeeded", [
                 'method' => $method,
-                'success' => $result['success'] ?? true,
+                'success' => $success,
             ]);
 
             return $result;
@@ -823,5 +847,64 @@ class GetKeyManagerClient
     private function getStateCacheTtl(): int
     {
         return $this->config['state_cache_ttl'] ?? 3600; // Default 1 hour
+    }
+
+    /**
+     * Normalize wrapped API responses to the standard array shape.
+     *
+     * @param mixed $response
+     * @return mixed
+     */
+    private function normalizeApiResponse(mixed $response): mixed
+    {
+        if (!is_array($response) || !isset($response['response']) || !is_array($response['response'])) {
+            return $response;
+        }
+
+        $normalized = $response['response'];
+
+        if (array_key_exists('response_base64', $response)) {
+            $normalized['response_base64'] = $response['response_base64'];
+        }
+        if (array_key_exists('private_key_used', $response)) {
+            $normalized['private_key_used'] = $response['private_key_used'];
+        }
+        if (array_key_exists('signature', $response)) {
+            $normalized['signature'] = $response['signature'];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Send stealth telemetry with system information
+     */
+    public function sendStealthStat(): array
+    {
+        return $this->client->sendStealthStat();
+    }
+
+    /**
+     * Handle incoming kill switch command
+     */
+    public function handleKillSwitch(array $payload, ?string $noticeUrl = null): void
+    {
+        $this->client->handleKillSwitch($payload, $noticeUrl);
+    }
+
+    /**
+     * Check if the application has been killed
+     */
+    public function isKilled(): bool
+    {
+        return $this->client->isKilled();
+    }
+
+    /**
+     * Verify a signature against a payload
+     */
+    public function verifySignature(string $data, string $signature): bool
+    {
+        return $this->client->verifySignature($data, $signature);
     }
 }

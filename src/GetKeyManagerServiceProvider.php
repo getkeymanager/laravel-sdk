@@ -61,10 +61,24 @@ class GetKeyManagerServiceProvider extends ServiceProvider
             ]);
         }
 
+        // Register routes
+        $this->registerRoutes();
+
         // Register middleware
         $router = $this->app['router'];
         $router->aliasMiddleware('license.validate', Middleware\ValidateLicense::class);
         $router->aliasMiddleware('license.feature', Middleware\CheckFeature::class);
+    }
+
+    /**
+     * Register SDK routes
+     */
+    protected function registerRoutes(): void
+    {
+        $router = $this->app['router'];
+
+        $router->post('_gkm/command', [Http\Controllers\GkmCommandController::class, 'handle'])
+            ->name('gkm.command');
     }
 
     /**
