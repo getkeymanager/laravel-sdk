@@ -49,20 +49,46 @@ class SignatureVerifier
             throw new InvalidArgumentException('Invalid public key format: ' . openssl_error_string());
         }
 
-        $this->keyDetails = openssl_pkey_get_details($this->publicKey);
+        $keyDetails = openssl_pkey_get_details($this->publicKey);
 
-        if ($this->keyDetails === false) {
+        if ($keyDetails === false) {
             throw new RuntimeException('Failed to get key details');
         }
 
-        if (isset($this->keyDetails['type'])) {
-            if ($this->keyDetails['type'] === OPENSSL_KEYTYPE_ED25519) {
-                $this->keyType = 'Ed25519';
-            } elseif ($this->keyDetails['type'] === OPENSSL_KEYTYPE_RSA) {
-                $this->keyType = 'RSA';
-                $this->validateRsaKeyDetails();
+
+        $this->keyType = $this->detectKeyType();
+    }
+
+    /**
+     * Detect key type from OpenSSL details.
+     */
+    protected function detectKeyType(): string
+    {
+        $type = $this->keyDetails['type'] ?? null;
+
+        if ($type !== null && defined('OPENSSL_KEYTYPE_ED25519') && $type === OPENSSL_KEYTYPE_ED25519) {
+            return 'Ed25519';
+        }
+
+        if ($type !== null && defined('OPENSSL_KEYTYPE_RSA') && $type === OPENSSL_KEYTYPE_RSA) {
+            $this->validateRsaKeyDetails();
+            return 'RSA';
+        }
+
+        if ($type !== null && defined('OPENSSL_KEYTYPE_EC') && $type === OPENSSL_KEYTYPE_EC) {
+            $curveName = $this->keyDetails['ec']['curve_name'] ?? '';
+            if ($curveName !== '' && stripos($curveName, 'ed25519') !== false) {
+                return 'Ed25519';
+
             }
         }
+
+        if (isset($this->keyDetails['rsa'])) {
+            $this->validateRsaKeyDetails();
+            return 'RSA';
+        }
+
+        return 'Unknown';
     }
 
     /**
@@ -173,11 +199,12 @@ class SignatureVerifier
         }
 
         $signature = $data['signature'];
-        unset($data['signature']);
+        $algorithm = $data['signature_metadata']['algorithm'] ?? null;
+        unset($data['signature'], $data['signature_metadata']);
 
         $canonicalJson = $this->canonicalizeJson($data);
 
-        return $this->verify($canonicalJson, $signature);
+        return $this->verify($canonicalJson, $signature, $algorithm ?? 'RSA-SHA256');
     }
 
     /**

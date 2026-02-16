@@ -253,13 +253,15 @@ class StateResolver
             return;
         }
 
-        // Remove signature from response for verification
+        // Remove signature and metadata from response for verification
         $responseForVerification = $response;
-        unset($responseForVerification['signature']);
+        unset($responseForVerification['signature'], $responseForVerification['signature_metadata']);
+
+        $algorithm = $response['signature_metadata']['algorithm'] ?? null;
 
         $payload = json_encode($responseForVerification, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         
-        if (!$this->verifier->verify($payload, $signature)) {
+        if (!$this->verifier->verify($payload, $signature, $algorithm ?? 'RSA-SHA256')) {
             throw new SignatureException('Response signature verification failed');
         }
     }
